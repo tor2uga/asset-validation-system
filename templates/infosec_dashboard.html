@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Infosec Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+
+    <div class="card">
+        <h2>Infosec Dashboard - {{ user.display_name or user.username }}</h2>
+        <p>Approve or reject department attestations for the active workflow.</p>
+    </div>
+
+    <div class="card">
+        <h3>Pending Department Attestations</h3>
+
+        <table>
+            <tr>
+                <th>Attestation ID</th>
+                <th>Department</th>
+                <th>Cycle</th>
+                <th>Lead</th>
+                <th>Status</th>
+                <th>Submitted At</th>
+                <th>Comment</th>
+                <th>Action</th>
+            </tr>
+
+            {% for a in attestations %}
+            <tr>
+                <td>{{ a.id }}</td>
+                <td>{{ departments.get(a.department_id, "N/A") }}</td>
+                <td>{{ cycles[a.cycle_id].name if cycles.get(a.cycle_id) else "N/A" }}</td>
+                <td>
+                    {% set lead_user = users.get(a.lead_user_id) %}
+                    {{ lead_user.display_name if lead_user and lead_user.display_name else (lead_user.username if lead_user else "N/A") }}
+                </td>
+                <td>{{ a.infosec_status }}</td>
+                <td>{{ a.submitted_at }}</td>
+                <td>{{ a.infosec_comment or "" }}</td>
+                <td>
+                    <form method="post" action="/ui/infosec/approve-attestation" style="display:inline;">
+                        <input type="hidden" name="attestation_id" value="{{ a.id }}">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <button type="submit">Approve</button>
+                    </form>
+
+                    <form method="post" action="/ui/infosec/reject-attestation" style="display:inline;">
+                        <input type="hidden" name="attestation_id" value="{{ a.id }}">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <input type="text" name="reason" placeholder="Reason">
+                        <button type="submit">Reject</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

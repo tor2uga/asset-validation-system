@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Team Lead Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+
+    <div class="card">
+        <h2>Team Lead Dashboard - {{ user.display_name or user.username }}</h2>
+        <a href="/ui/team-lead/{{ user.id }}/export">
+            <button type="button">Export Assets Table</button>
+        </a>
+    </div>
+
+    <div class="card">
+        <h3>Pending Validations</h3>
+
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+            <input
+                type="text"
+                id="leadValidationSearch"
+                placeholder="Search validations..."
+                onkeyup="applyLeadValidationTableView()"
+                style="min-width:240px;"
+            >
+
+            <select id="leadValidationStatusFilter" onchange="applyLeadValidationTableView()">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="reassign">Reassign</option>
+                <option value="decommissioned">Decommissioned</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+            <select id="leadValidationPageSize" onchange="changeLeadValidationPageSize()">
+                <option value="25">25 per page</option>
+                <option value="50" selected>50 per page</option>
+                <option value="100">100 per page</option>
+                <option value="200">200 per page</option>
+            </select>
+
+            <span id="leadValidationSummary"></span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="asset-table" id="leadValidationTable">
+                <thead>
+                    <tr>
+                        <th>Validation ID</th>
+                        <th>Asset ID</th>
+                        <th>Serial No</th>
+                        <th>Asset / Serial No</th>
+                        <th>Asset Type</th>
+                        <th>Host Name</th>
+                        <th>Description</th>
+                        <th>IP Address</th>
+                        <th>Privilege</th>
+                        <th>Criticality</th>
+                        <th>Condition</th>
+                        <th>Assigned To / Custodian / Product Owner / Business Line</th>
+                        <th>Status</th>
+                        <th>Comment</th>
+                        <th>New Team</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in validations %}
+                    <tr class="lead-validation-row" data-status="{{ v.status or '' }}">
+                        <td>{{ v.id }}</td>
+                        <td>{{ v.asset_id }}</td>
+                        <td>{{ v.asset.serial_no if v.asset else "" }}</td>
+                        <td>{{ v.asset.asset_serial_no if v.asset else "" }}</td>
+                        <td>{{ v.asset.asset_type if v.asset else "" }}</td>
+                        <td>{{ v.asset.host_name if v.asset else "" }}</td>
+                        <td>{{ v.asset.description if v.asset else "" }}</td>
+                        <td>{{ v.asset.ip_address if v.asset else "" }}</td>
+                        <td>{{ v.asset.privilege if v.asset else "" }}</td>
+                        <td>{{ v.asset.criticality if v.asset else "" }}</td>
+                        <td>{{ v.asset.condition if v.asset else "" }}</td>
+                        <td>{{ v.asset.assigned_to_custodian_owner_business_line if v.asset else "" }}</td>
+                        <td>
+                            {% if v.status == "active" %}
+                                <span style="color:green;">Active</span>
+                            {% elif v.status == "reassign" %}
+                                <span style="color:orange;">Reassign</span>
+                            {% elif v.status == "decommissioned" %}
+                                <span style="color:red;">Decommissioned</span>
+                            {% elif v.status == "inactive" %}
+                                <span style="color:gray;">Inactive</span>
+                            {% else %}
+                                {{ v.status }}
+                            {% endif %}
+                        </td>
+                        <td>{{ v.comment }}</td>
+                        <td>{{ v.new_department_id }}</td>
+                        <td>
+                            {% if v.approval_stage == "pending_lead_review" %}
+                                <form method="post" action="/ui/team-lead/approve-validation" style="display:inline;">
+                                    <input type="hidden" name="validation_id" value="{{ v.id }}">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <button type="submit">Approve</button>
+                                </form>
+
+                                <form method="post" action="/ui/team-lead/reject-validation" style="display:inline;">
+                                    <input type="hidden" name="validation_id" value="{{ v.id }}">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <input type="text" name="reason" placeholder="Reason">
+                                    <button type="submit">Reject</button>
+                                </form>
+
+                            {% elif v.approval_stage == "returned_to_lead" %}
+                                <span style="color:red; font-weight:bold;">Returned by Infosec</span>
+
+                            {% else %}
+                                <span style="color:green; font-weight:bold;">Processed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-bar">
+            <button type="button" onclick="goToPrevLeadValidationPage()">Previous</button>
+            <span id="leadValidationPageInfo">Page 1</span>
+            <button type="button" onclick="goToNextLeadValidationPage()">Next</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>New Asset Discoveries</h3>
+
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+            <input
+                type="text"
+                id="leadDiscoverySearch"
+                placeholder="Search discoveries..."
+                onkeyup="applyLeadDiscoveryTableView()"
+                style="min-width:240px;"
+            >
+
+            <select id="leadDiscoveryPageSize" onchange="changeLeadDiscoveryPageSize()">
+                <option value="25">25 per page</option>
+                <option value="50" selected>50 per page</option>
+                <option value="100">100 per page</option>
+                <option value="200">200 per page</option>
+            </select>
+
+            <span id="leadDiscoverySummary"></span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="asset-table" id="leadDiscoveryTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>S/N</th>
+                        <th>Condition</th>
+                        <th>Asset Type</th>
+                        <th>Asset / Serial No</th>
+                        <th>Host / Application / Server Name</th>
+                        <th>Description</th>
+                        <th>Application URL / IP</th>
+                        <th>Privilege</th>
+                        <th>Criticality</th>
+                        <th>Assigned To / Custodian / Product Owner / Business Line</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in discoveries %}
+                    <tr class="lead-discovery-row">
+                        <td>{{ d.id }}</td>
+                        <td>{{ d.sn }}</td>
+                        <td>{{ d.condition }}</td>
+                        <td>{{ d.asset_type }}</td>
+                        <td>{{ d.asset_serial_no }}</td>
+                        <td>{{ d.host_application_server_name }}</td>
+                        <td>{{ d.description }}</td>
+                        <td>{{ d.application_url_ip }}</td>
+                        <td>{{ d.privilege }}</td>
+                        <td>{{ d.criticality }}</td>
+                        <td>{{ d.assigned_to_custodian_owner_business_line }}</td>
+                        <td>{{ d.status }}</td>
+                        <td>
+                            <form method="post" action="/ui/team-lead/approve-discovery" style="display:inline;">
+                                <input type="hidden" name="discovery_id" value="{{ d.id }}">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit">Approve</button>
+                            </form>
+
+                            <form method="post" action="/ui/team-lead/reject-discovery" style="display:inline;">
+                                <input type="hidden" name="discovery_id" value="{{ d.id }}">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="text" name="reason" placeholder="Reason">
+                                <button type="submit">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-bar">
+            <button type="button" onclick="goToPrevLeadDiscoveryPage()">Previous</button>
+            <span id="leadDiscoveryPageInfo">Page 1</span>
+            <button type="button" onclick="goToNextLeadDiscoveryPage()">Next</button>
+        </div>
+    </div>
+
+    <div class="card sticky-attestation-card">
+        <h3>Submit Attestation</h3>
+
+        {% set ready_cycles = [] %}
+        {% for c in cycles %}
+            {% set readiness = attestation_readiness.get(c.id) %}
+            {% if c.id not in attested_cycle_ids and readiness and readiness.is_ready %}
+                {% set _ = ready_cycles.append(c) %}
+            {% endif %}
+        {% endfor %}
+
+        {% if ready_cycles %}
+            <form method="post" action="/ui/team-lead/attest">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+
+                <label>Department</label><br>
+                <select name="department_id" required>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <br><br>
+
+                <label>Cycle</label><br>
+                <select name="cycle_id" required>
+                    {% for c in ready_cycles %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <div style="margin-top:12px;">
+                    {% for c in cycles %}
+                        {% set readiness = attestation_readiness.get(c.id) %}
+                        {% if c.id not in attested_cycle_ids and readiness and not readiness.is_ready %}
+                            <p>
+                                <strong>{{ c.name }} not ready:</strong>
+                                {% if readiness.missing_asset_ids %}
+                                    {{ readiness.missing_asset_ids|length }} assets not yet validated.
+                                {% endif %}
+                                {% if readiness.pending_lead_validations > 0 %}
+                                    {{ readiness.pending_lead_validations }} validations still pending Team Lead approval.
+                                {% endif %}
+                                {% if readiness.pending_lead_discoveries > 0 %}
+                                    {{ readiness.pending_lead_discoveries }} discoveries still pending Team Lead review.
+                                {% endif %}
+                            </p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <br>
+
+                <label>Attestation Statement</label><br>
+                <textarea name="attestation_data" rows="5" cols="50" required>I confirm all assets are validated and accurate.</textarea>
+
+                <br><br>
+
+                <div class="sticky-attestation-actions">
+                    <button type="submit">Submit Attestation</button>
+                    <span class="sticky-attestation-note">
+                        Only cycles with complete team validation and completed lead review can be attested.
+                    </span>
+                </div>
+            </form>
+        {% else %}
+            <p><strong>Attestation is locked.</strong></p>
+            <p>All department assets must be validated by Team Members, and all pending validations and discoveries must be reviewed by the Team Lead before attestation can be submitted.</p>
+
+            <div style="margin-top:12px;">
+                {% for c in cycles %}
+                    {% set readiness = attestation_readiness.get(c.id) %}
+                    {% if c.id not in attested_cycle_ids and readiness and not readiness.is_ready %}
+                        <p>
+                            <strong>{{ c.name }} not ready:</strong>
+                            {% if readiness.missing_asset_ids %}
+                                {{ readiness.missing_asset_ids|length }} assets not yet validated.
+                            {% endif %}
+                            {% if readiness.pending_lead_validations > 0 %}
+                                {{ readiness.pending_lead_validations }} validations still pending Team Lead approval.
+                            {% endif %}
+                            {% if readiness.pending_lead_discoveries > 0 %}
+                                {{ readiness.pending_lead_discoveries }} discoveries still pending Team Lead review.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+    let currentLeadValidationPage = 1;
+    let leadValidationPageSize = 50;
+
+    let currentLeadDiscoveryPage = 1;
+    let leadDiscoveryPageSize = 50;
+
+    function getFilteredLeadValidationRows() {
+        const search = document.getElementById("leadValidationSearch").value.toLowerCase();
+        const status = document.getElementById("leadValidationStatusFilter").value;
+        const rows = Array.from(document.querySelectorAll("#leadValidationTable tbody tr.lead-validation-row"));
+
+        return rows.filter(row => {
+            const text = row.innerText.toLowerCase();
+            const rowStatus = row.dataset.status || "";
+            const matchesSearch = text.includes(search);
+            const matchesStatus = !status || rowStatus === status;
+            return matchesSearch && matchesStatus;
+        });
+    }
+
+    function applyLeadValidationTableView() {
+        const filteredRows = getFilteredLeadValidationRows();
+        const totalRows = filteredRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / leadValidationPageSize));
+
+        if (currentLeadValidationPage > totalPages) currentLeadValidationPage = totalPages;
+        if (currentLeadValidationPage < 1) currentLeadValidationPage = 1;
+
+        const allRows = document.querySelectorAll("#leadValidationTable tbody tr.lead-validation-row");
+        allRows.forEach(row => row.style.display = "none");
+
+        const startIndex = (currentLeadValidationPage - 1) * leadValidationPageSize;
+        const endIndex = startIndex + leadValidationPageSize;
+        const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+        visibleRows.forEach(row => row.style.display = "");
+
+        document.getElementById("leadValidationPageInfo").innerText =
+            `Page ${currentLeadValidationPage} of ${totalPages}`;
+
+        document.getElementById("leadValidationSummary").innerText =
+            `${totalRows} matching validations`;
+    }
+
+    function goToPrevLeadValidationPage() {
+        currentLeadValidationPage -= 1;
+        applyLeadValidationTableView();
+    }
+
+    function goToNextLeadValidationPage() {
+        currentLeadValidationPage += 1;
+        applyLeadValidationTableView();
+    }
+
+    function changeLeadValidationPageSize() {
+        leadValidationPageSize = parseInt(document.getElementById("leadValidationPageSize").value, 10);
+        currentLeadValidationPage = 1;
+        applyLeadValidationTableView();
+    }
+
+    function getFilteredLeadDiscoveryRows() {
+        const search = document.getElementById("leadDiscoverySearch").value.toLowerCase();
+        const rows = Array.from(document.querySelectorAll("#leadDiscoveryTable tbody tr.lead-discovery-row"));
+
+        return rows.filter(row => row.innerText.toLowerCase().includes(search));
+    }
+
+    function applyLeadDiscoveryTableView() {
+        const filteredRows = getFilteredLeadDiscoveryRows();
+        const totalRows = filteredRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / leadDiscoveryPageSize));
+
+        if (currentLeadDiscoveryPage > totalPages) currentLeadDiscoveryPage = totalPages;
+        if (currentLeadDiscoveryPage < 1) currentLeadDiscoveryPage = 1;
+
+        const allRows = document.querySelectorAll("#leadDiscoveryTable tbody tr.lead-discovery-row");
+        allRows.forEach(row => row.style.display = "none");
+
+        const startIndex = (currentLeadDiscoveryPage - 1) * leadDiscoveryPageSize;
+        const endIndex = startIndex + leadDiscoveryPageSize;
+        const visibleRows = filteredRows.slice(startIndex, endIndex);
+
+        visibleRows.forEach(row => row.style.display = "");
+
+        document.getElementById("leadDiscoveryPageInfo").innerText =
+            `Page ${currentLeadDiscoveryPage} of ${totalPages}`;
+
+        document.getElementById("leadDiscoverySummary").innerText =
+            `${totalRows} matching discoveries`;
+    }
+
+    function goToPrevLeadDiscoveryPage() {
+        currentLeadDiscoveryPage -= 1;
+        applyLeadDiscoveryTableView();
+    }
+
+    function goToNextLeadDiscoveryPage() {
+        currentLeadDiscoveryPage += 1;
+        applyLeadDiscoveryTableView();
+    }
+
+    function changeLeadDiscoveryPageSize() {
+        leadDiscoveryPageSize = parseInt(document.getElementById("leadDiscoveryPageSize").value, 10);
+        currentLeadDiscoveryPage = 1;
+        applyLeadDiscoveryTableView();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        applyLeadValidationTableView();
+        applyLeadDiscoveryTableView();
+    });
+    </script>
+</body>
+</html>
