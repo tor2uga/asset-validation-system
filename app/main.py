@@ -1738,32 +1738,8 @@ def mark_notification_read(notification_id: int, db: Session = Depends(get_db)):
     return {"status": "ok"}
 
 
-@app.get("/ui/home/{user_id}")
-def route_user_dashboard(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(models.ADUser).filter(models.ADUser.id == user_id).first()
 
-    if not user:
-        return HTMLResponse("User not found", status_code=404)
-
-    if user.role == "team_member":
-        return RedirectResponse(url=f"/ui/team-member/{user_id}", status_code=303)
-
-    elif user.role == "team_lead":
-        return RedirectResponse(url=f"/ui/team-lead/{user_id}", status_code=303)
-
-    elif user.role == "compliance":
-        return RedirectResponse(url=f"/ui/compliance/{user_id}", status_code=303)
-
-    elif user.role == "infosec":
-        return RedirectResponse(url=f"/ui/infosec/{user_id}", status_code=303)
-
-    else:
-        return HTMLResponse("No role assigned", status_code=400)
     
-@app.get("/login/{user_id}")
-def login(user_id: int):
-    return RedirectResponse(url=f"/ui/home/{user_id}", status_code=303)
-
 @app.get("/ui/home/{user_id}")
 def route_user_dashboard(user_id: int, db: Session = Depends(get_db)):
     user = db.query(models.ADUser).filter(models.ADUser.id == user_id).first()
@@ -1829,40 +1805,7 @@ def update_ad_user_role(
     db.refresh(user)
     return user
 
-@app.get("/team-attestations/{attestation_id}/download")
-def download_attestation_pdf(
-    attestation_id: int,
-    user_id: int,
-    db: Session = Depends(get_db)
-):
-    user = db.query(models.ADUser).filter(models.ADUser.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    print("DOWNLOAD DEBUG:", user_id, user.username if user else None, user.role if user else None)
-    
-    if user.role != "compliance":
-        raise HTTPException(status_code=403, detail="Only IT Compliance can download attestation PDFs")
-    
-    attestation = db.query(models.TeamAttestation).filter(
-        models.TeamAttestation.id == attestation_id
-    ).first()
-    if not attestation:
-        raise HTTPException(status_code=404, detail="Attestation not found")
 
-    if not attestation.file_path:
-        raise HTTPException(status_code=404, detail="Attestation PDF not found")
-
-    pdf_file = Path(attestation.file_path)
-    if not pdf_file.exists():
-        raise HTTPException(status_code=404, detail="Attestation PDF file missing")
-
-    return FileResponse(
-        path=str(pdf_file),
-        filename=pdf_file.name,
-        media_type="application/pdf"
-    )
-    
 
 @app.get("/ui/{role}/{user_id}/final-assets", response_class=HTMLResponse)
 def final_assets_dashboard(role: str, user_id: int, request: Request, db: Session = Depends(get_db)):
