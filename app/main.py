@@ -1018,6 +1018,7 @@ def ui_submit_validation(
     status: str = Form(...),
     comment: str = Form(""),
     new_department_id: str = Form(None),
+    assigned_to_name: str = Form(""),
     db: Session = Depends(get_db)
 ):
     try:
@@ -1027,6 +1028,7 @@ def ui_submit_validation(
             status=status,
             comment=comment,
             new_department_id=new_department_id,
+            assigned_to_name=assigned_to_name,
             db=db
         )
     except Exception as e:
