@@ -36,7 +36,7 @@ from app.services.final_asset_service import (
 )
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="app/templates"), name="static")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key="super-secret-key-change-this")
 
 
