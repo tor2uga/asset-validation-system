@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dept Head Dashboard</title>
+</head>
+<body>
+    <div class="card">
+    <h2>Head Dashboard - {{ user.display_name or user.username }}</h2>
+</div>
+    <h3>Pending Head Approvals</h3>
+
+    <table>
+        <tr>
+            <th>Validation ID</th>
+            <th>Asset Serial No</th>
+            <th>Requested By</th>
+            <th>Status</th>
+            <th>Comment</th>
+            <th>New Team</th>
+            <th>Action</th>
+        </tr>
+
+        {% for validation in validations %}
+        <tr>
+            <td>{{ validation.id }}</td>
+            <td>{{ validation.asset_serial }}</td>
+            <td>{{ validation.username }}</td>
+            <td>{{ validation.status }}</td>
+            <td>{{ validation.comment }}</td>
+            <td>{{ validation.new_team }}</td>
+            <td>
+                <form method="post" action="/ui/approve-head/{{ validation.id }}/{{ user.id }}">
+                    <button type="submit">Approve</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

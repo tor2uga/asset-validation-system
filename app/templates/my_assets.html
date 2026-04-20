@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Assets</title>
+    <link rel="stylesheet" href="/templates/styles.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <h2>Welcome, {{ user.username }}</h2>
+    <h3>Your Department Assets</h3>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Serial No</th>
+            <th>Asset Type</th>
+            <th>Host Name</th>
+            <th>Description</th>
+            <th>IP Address</th>
+            <th>Privilege</th>
+            <th>Criticality</th>
+            <th>Validate</th>
+        </tr>
+
+        {% for asset in assets %}
+        <tr>
+            <td>{{ asset.id }}</td>
+            <td>{{ asset.serial_no }}</td>
+            <td>{{ asset.asset_type }}</td>
+            <td>{{ asset.host_name }}</td>
+            <td>{{ asset.description }}</td>
+            <td>{{ asset.ip_address }}</td>
+            <td>{{ asset.privilege }}</td>
+            <td>{{ asset.criticality }}</td>
+            <td>
+                <td>
+    {% if asset.id in validated_asset_ids %}
+        <strong style="color: green;">Submitted</strong><br>
+        <small>Pending approval</small>
+    {% else %}
+        <form method="post" action="/ui/validate-asset" onsubmit="disableForm(this)">
+            <input type="hidden" name="asset_id" value="{{ asset.id }}">
+            <input type="hidden" name="user_id" value="{{ user.id }}">
+
+            <select name="status" onchange="toggleDeptField(this)">
+                <option value="active">Active</option>
+                <option value="decommissioned">Decommissioned</option>
+                <option value="reassign">Reassign</option>
+                <option value="inactive">Inactive</option>
+            </select>
+
+            <br><br>
+            <input type="text" name="comment" placeholder="Comment">
+
+            <br><br>
+            <div class="dept-field" style="display:none;">
+                <label>New Team:</label><br>
+                <select name="new_department_id">
+                    <option value="">Select Team</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <br><br>
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    {% endif %}
+</td>                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+    function toggleDeptField(selectElement) {
+        const form = selectElement.closest("form");
+        const deptField = form.querySelector(".dept-field");
+
+        if (selectElement.value === "reassign") {
+            deptField.style.display = "block";
+        } else {
+            deptField.style.display = "none";
+        }
+    }
+    </script>
+    <script>
+function toggleDeptField(selectElement) {
+    const form = selectElement.closest("form");
+    const deptField = form.querySelector(".dept-field");
+
+    if (selectElement.value === "reassign") {
+        deptField.style.display = "block";
+    } else {
+        deptField.style.display = "none";
+    }
+}
+
+function disableForm(form) {
+    const elements = form.querySelectorAll("select, input, button");
+    elements.forEach(el => el.disabled = true);
+
+    const btn = form.querySelector(".submit-btn");
+    if (btn) {
+        btn.innerText = "Submitting...";
+    }
+}
+</script>
+</body>
+</html>

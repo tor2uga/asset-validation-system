@@ -1,0 +1,30 @@
+<div class="nav">
+    <span class="nav-title">Asset Validation System</span>
+
+    <div class="nav-links">
+        {% if user %}
+            <span class="nav-user">
+                {{ user.display_name or user.username }} ({{ user.role or "No Role" }})
+            </span>
+
+            {% if user.role == "team_member" %}
+                <a href="/ui/team-member/{{ user.id }}">Dashboard</a>
+                <a href="/ui/team-member/{{ user.id }}/final-assets">Final Assets</a>
+
+            {% elif user.role == "team_lead" %}
+                <a href="/ui/team-lead/{{ user.id }}">Dashboard</a>
+                <a href="/ui/team-lead/{{ user.id }}/final-assets">Final Assets</a>
+
+            {% elif user.role == "compliance" %}
+                <a href="/ui/compliance/{{ user.id }}">Dashboard</a>
+                <a href="/ui/compliance/{{ user.id }}/final-assets-admin">Final Assets</a>
+
+            {% elif user.role == "infosec" %}
+                <a href="/ui/infosec/{{ user.id }}">Dashboard</a>
+                <a href="/ui/infosec/{{ user.id }}/final-assets-admin">Final Assets</a>
+            {% endif %}
+        {% else %}
+            <span>No user context</span>
+        {% endif %}
+    </div>
+</div>
