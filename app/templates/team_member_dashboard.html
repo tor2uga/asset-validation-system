@@ -102,7 +102,8 @@
                     <td>{{ asset.privilege or "" }}</td>
                     <td>{{ asset.criticality or "" }}</td>
                     <td>{{ asset.condition or "" }}</td>
-                    <td>{{ asset.assigned_to_custodian_owner_business_line or "" }}</td>
+                    <td>{{ Assigned To / Custodian / Product Owner / Business Line}}</td>
+                        
                     <td>
                         {% if returned_validation %}
                             <div class="action-stack">
@@ -163,7 +164,17 @@
                                 </div>
 
                                 <br>
-
+                    <label>Assigned To / Custodian / Product Owner / Business Line</label>
+                    <select name="assigned_to_name" required>
+                        <option value="">Select team member</option>
+                        {% for member in team_members %}
+                            {% set member_name = member.display_name if member.display_name else member.username %}
+                            <option value="{{ member_name }}"
+                                {% if asset.assigned_to_custodian_owner_business_line == member_name %}selected{% endif %}>
+                                {{ member_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                                 <label>Comment</label><br>
                                 <input
                                     type="text"
