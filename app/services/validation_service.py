@@ -9,12 +9,13 @@ def get_active_cycle(db: Session):
 
 
 def submit_team_member_validation(
-    user_id: int,
-    asset_id: int,
-    status: str,
-    comment: str,
-    new_department_id: str | None,
-    db: Session,
+    user_id,
+    asset_id,
+    status,
+    comment,
+    new_department_id,
+    assigned_to_name,
+    db
 ):
     user = db.query(models.ADUser).filter(models.ADUser.id == user_id).first()
     if not user:
@@ -31,6 +32,10 @@ def submit_team_member_validation(
         raise Exception("No active validation cycle found")
 
     asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+    
+    if assigned_to_name and assigned_to_name.strip():
+    asset.assigned_to_custodian_owner_business_line = assigned_to_name.strip()
+    
     if not asset:
         raise Exception("Asset not found")
 
