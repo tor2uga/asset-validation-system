@@ -991,7 +991,10 @@ def team_member_dashboard(user_id: int, request: Request, db: Session = Depends(
         if v.asset_id is not None
         and v.approval_stage == "returned_to_team"
     }
-
+team_members = db.query(models.ADUser).filter(
+    models.ADUser.department_id == user.department_id,
+    models.ADUser.role == "team_member"
+).order_by(models.ADUser.display_name.asc(), models.ADUser.username.asc()).all()
     return templates.TemplateResponse(
     request,
     "team_member_dashboard.html",
@@ -1003,6 +1006,7 @@ def team_member_dashboard(user_id: int, request: Request, db: Session = Depends(
         "validated_asset_ids": validated_asset_ids,
         "returned_validation_map": returned_validation_map,
         "notifications": notifications,
+        "team_members": team_members,
         "active_cycle": active_cycle
     }
 )
