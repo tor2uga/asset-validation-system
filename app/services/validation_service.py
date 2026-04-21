@@ -32,15 +32,14 @@ def submit_team_member_validation(
         raise Exception("No active validation cycle found")
 
     asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
-    
-    if assigned_to_name and assigned_to_name.strip():
-    asset.assigned_to_custodian_owner_business_line = assigned_to_name.strip()
-    
     if not asset:
         raise Exception("Asset not found")
 
     if asset.department_id != user.department_id:
         raise Exception("You can only validate assets in your department")
+
+    if assigned_to_name and assigned_to_name.strip():
+        asset.assigned_to_custodian_owner_business_line = assigned_to_name.strip()
 
     target_department = int(new_department_id) if new_department_id else None
 
@@ -53,7 +52,7 @@ def submit_team_member_validation(
         models.AssetValidation.cycle_id == active_cycle.id
     ).first()
 
-    # 🔁 Handle returned validation (resubmission)
+    # Handle returned validation (resubmission)
     if existing and existing.approval_stage == "returned_to_team":
         existing.status = status
         existing.comment = comment
@@ -62,13 +61,16 @@ def submit_team_member_validation(
         existing.approval_stage = "pending_lead_review"
         existing.reassignment_status = "pending_lead" if status == "reassign" else None
         db.commit()
+        db.refresh(existing)
         return existing
 
-    # ⛔ Already submitted
+    # Already submitted
     if existing:
+        db.commit()
+        db.refresh(existing)
         return existing
 
-    # ✅ Create new validation
+    # Create new validation
     validation = models.AssetValidation(
         cycle_id=active_cycle.id,
         asset_id=asset_id,
