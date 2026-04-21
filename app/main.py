@@ -1016,8 +1016,6 @@ def team_member_dashboard(user_id: int, request: Request, db: Session = Depends(
             "active_cycle": active_cycle
         }
     )
-
-
 @app.post("/ui/team-member/validate")
 def ui_submit_validation(
     user_id: int = Form(...),
