@@ -138,8 +138,10 @@
                             <form method="post" action="/ui/team-member/validate" onsubmit="return disableForm(this)">
                                 <input type="hidden" name="user_id" value="{{ user.id }}">
                                 <input type="hidden" name="asset_id" value="{{ asset.id }}">
-
-                                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                            
+                                <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end;">
+                            
+                                    <!-- Status -->
                                     <div>
                                         <label>Status</label><br>
                                         <select name="status" onchange="toggleDeptField(this)" required>
@@ -149,7 +151,8 @@
                                             <option value="reassign">Reassign</option>
                                         </select>
                                     </div>
-
+                            
+                                    <!-- Reassign -->
                                     <div class="dept-field" style="display:none;">
                                         <label>Reassign To</label><br>
                                         <select name="new_department_id">
@@ -161,31 +164,40 @@
                                             {% endfor %}
                                         </select>
                                     </div>
+                            
+                                    <!-- Assigned To (NEW FIELD - CLEAN) -->
+                                    <div style="min-width:250px;">
+                                        <label>Assigned To</label><br>
+                                        <select name="assigned_to_name" required>
+                                            <option value="">Select team member</option>
+                                            {% for member in team_members %}
+                                                {% set member_name = member.display_name if member.display_name else member.username %}
+                                                <option value="{{ member_name }}"
+                                                    {% if asset.assigned_to_custodian_owner_business_line == member_name %}selected{% endif %}>
+                                                    {{ member_name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                            
                                 </div>
-
+                            
                                 <br>
-                    <label>Assigned To / Custodian / Product Owner / Business Line</label>
-                    <select name="assigned_to_name" required>
-                        <option value="">Select team member</option>
-                        {% for member in team_members %}
-                            {% set member_name = member.display_name if member.display_name else member.username %}
-                            <option value="{{ member_name }}"
-                                {% if asset.assigned_to_custodian_owner_business_line == member_name %}selected{% endif %}>
-                                {{ member_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                                <label>Comment</label><br>
-                                <input
-                                    type="text"
-                                    name="comment"
-                                    placeholder="Comment"
-                                    value="{{ returned_validation.comment if returned_validation else '' }}"
-                                    style="min-width:320px;"
-                                >
-
-                                <br><br>
-
+                            
+                                <!-- Comment -->
+                                <div>
+                                    <label>Comment</label><br>
+                                    <input
+                                        type="text"
+                                        name="comment"
+                                        placeholder="Comment"
+                                        value="{{ returned_validation.comment if returned_validation else '' }}"
+                                        style="min-width:320px;"
+                                    >
+                                </div>
+                            
+                                <br>
+                            
                                 <button type="submit" class="submit-btn">Submit Validation</button>
                                 <button type="button" onclick="toggleValidationForm('validation-form-{{ asset.id }}')">
                                     Cancel
@@ -239,7 +251,7 @@
             <label>Criticality</label><br>
             <input type="text" name="criticality"><br><br>
 
-            <label>Assigned To / Custodian / Product Owner / Business Line</label><br>
+            <label>Assigned To</label><br>
             <input type="text" name="assigned_to_custodian_owner_business_line"><br><br>
 
             <button type="submit">Submit New Asset</button>
