@@ -989,27 +989,34 @@ def team_member_dashboard(user_id: int, request: Request, db: Session = Depends(
     returned_validation_map = {
         v.asset_id: v for v in validations
         if v.asset_id is not None
+        and v.cycle_id == (active_cycle.id if active_cycle else None)
         and v.approval_stage == "returned_to_team"
     }
-team_members = db.query(models.ADUser).filter(
-    models.ADUser.department_id == user.department_id,
-    models.ADUser.role == "team_member"
-).order_by(models.ADUser.display_name.asc(), models.ADUser.username.asc()).all()
+
+    team_members = db.query(models.ADUser).filter(
+        models.ADUser.department_id == user.department_id,
+        models.ADUser.role == "team_member"
+    ).order_by(
+        models.ADUser.display_name.asc(),
+        models.ADUser.username.asc()
+    ).all()
+
     return templates.TemplateResponse(
-    request,
-    "team_member_dashboard.html",
-    {
-        "request": request,
-        "user": user,
-        "assets": assets,
-        "departments": departments,
-        "validated_asset_ids": validated_asset_ids,
-        "returned_validation_map": returned_validation_map,
-        "notifications": notifications,
-        "team_members": team_members,
-        "active_cycle": active_cycle
-    }
-)
+        request,
+        "team_member_dashboard.html",
+        {
+            "request": request,
+            "user": user,
+            "assets": assets,
+            "departments": departments,
+            "validated_asset_ids": validated_asset_ids,
+            "returned_validation_map": returned_validation_map,
+            "notifications": notifications,
+            "team_members": team_members,
+            "active_cycle": active_cycle
+        }
+    )
+
 
 @app.post("/ui/team-member/validate")
 def ui_submit_validation(
